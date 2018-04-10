@@ -1,28 +1,31 @@
-from pprint import pprint
-from aardvark import *
+import json
+import aardvark
+import pytest
 
-def test0():
+def _test(a, b):
+    diffs = list(aardvark.diff(a, b))
 
-    a = {'a': 1}
-    b = {'b': 1}
+    c = aardvark.apply(a, diffs)
 
-    print()
-    pprint(list(diff(a, b)))
+    assert b == c
 
-def test1():
+    diffs1 = [d.to_array() for d in diffs]
 
-    a = {'c': {'a': 1}}
-    b = {'c': {'b': 1}}
+    json.dumps(diffs1)
 
-    print()
-    pprint(list(diff(a, b)))
+    diffs2 = [aardvark.from_array(d) for d in diffs1]
 
-def test2():
+    d = aardvark.apply(a, diffs2)
+    
+    assert b == d
 
-    a = {'c': 1}
-    b = {'c': 2}
-
-    print()
-    pprint(list(diff(a, b)))
+@pytest.mark.parametrize("a, b", [
+    ({'a': 1}, {'b': 1}),
+    ({'c': {'a': 1}}, {'c': {'b': 1}}),
+    ({'c': 1}, {'c': 2}),
+    ])
+def test_diff(a, b):
+    _test(a, b)
+    _test(b, a)
 
 
