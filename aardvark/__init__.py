@@ -2,6 +2,9 @@ __version__ = '0.1'
 
 import copy
 
+def breakpoint():
+    import pdb; pdb.set_trace();
+
 def navigate(a, address):
     for line in address:
         a = line.navigate(a)
@@ -33,6 +36,9 @@ class OperationPairAdd(OperationPair):
     def apply2(self, a):
         a[self.pair[0]] = self.pair[1]
 
+    def to_array(self):
+        return {'$pair_add': [self.address.to_array(), self.pair]}
+
 class OperationReplace(Operation):
     def __init__(self, a, b, address):
         super(OperationReplace, self).__init__(address)
@@ -60,6 +66,12 @@ class AddressLineIndex:
     def navigate(self, a):
         return a[self.index]
 
+class Address:
+    def __init__(self, l
+    def __add__(self, l):
+
+
+
 def diff_dicts(a, b, address):
     
     keys_a = set(a.keys())
@@ -77,8 +89,7 @@ def diff_dicts(a, b, address):
     for k in a_and_b:
         yield from diff(a[k], b[k], address + [AddressLineKey(k)])
     
-
-def diff(a, b, address=[]):
+def diff(a, b, address=Address()):
     
     if a == b: return
     
@@ -93,6 +104,18 @@ def apply(a, diff_list):
     for d in diff_list:
         d.apply(a)
     return a
+
+def from_array(d):
+    s = list(d.keys())[0]
+
+    functions = {
+            '$pair_add': OperationPairAdd,
+            }
+
+    breakpoint()
+
+
+
 
 
 
