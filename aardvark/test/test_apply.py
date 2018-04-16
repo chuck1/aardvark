@@ -4,7 +4,7 @@ from aardvark import *
 def test0():
     a = {}
     diff_list = [
-            OperationPairAdd([], ('a', 1)),
+            OperationAdd([AddressLine('a')], 1),
             ]
     b = apply(a, diff_list)
 

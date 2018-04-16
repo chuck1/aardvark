@@ -30,27 +30,37 @@ class OperationPair(Operation):
         super(OperationPair, self).__init__(address)
         self.pair = copy.deepcopy(pair)
 
-    def __repr__(self):
-        return f'<{self.__class__.__name__} address={self.address} pair={self.pair}>'
-
     def apply2(self, a):
         raise NotImplementedError()
 
-    def to_array(self):
-        return {'pair_remove': [self.address.to_array(), self.pair]}
+class OperationRemove(Operation):
+    def __init__(self, address):
+        super(OperationRemove, self).__init__(address)
 
-class OperationPairRemove(OperationPair):
-
-    def apply2(self, a):
-        del a[self.pair[0]]
-
-class OperationPairAdd(OperationPair):
-
-    def apply2(self, a):
-        a[self.pair[0]] = self.pair[1]
+    def apply(self, a):
+        a = navigate(a, Address(self.address.lines[:-1]))
+        del a[self.address.lines[-1].key]
 
     def to_array(self):
-        return {'pair_add': [self.address.to_array(), self.pair]}
+        return {'remove': [self.address.to_array()]}
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__} address={self.address}>'
+
+class OperationAdd(Operation):
+    def __init__(self, address, value):
+        super(OperationAdd, self).__init__(address)
+        self.value = value
+
+    def apply(self, a):
+        a = navigate(a, Address(self.address.lines[:-1]))
+        a[self.address.lines[-1].key] = self.value
+
+    def to_array(self):
+        return {'add': [self.address.to_array(), self.value]}
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__} address={self.address} value={self.value!r}>'
 
 class OperationReplace(Operation):
     def __init__(self, a, b, address):
@@ -68,9 +78,7 @@ class OperationReplace(Operation):
     def to_array(self):
         return {'replace': [self.a, self.b, self.address.to_array()]}
 
-class AddressLine: pass
-
-class AddressLineKey:
+class AddressLine:
     def __init__(self, key):
         self.key = key
 
@@ -81,7 +89,7 @@ class AddressLineKey:
         return f'<{self.__class__.__name__} key={self.key}>'
 
     def to_array(self):
-        return {'address_line_key': [self.key]}
+        return {'address_line': [self.key]}
 
 class Address:
     def __init__(self, list_or_address=[]):
@@ -115,13 +123,13 @@ def diff_dicts(a, b, address):
     a_and_b = keys_a & keys_b
 
     for k in just_a:
-        yield OperationPairRemove(address, (k, a[k]))
+        yield OperationRemove(address + [AddressLine(k)])
 
     for k in just_b:
-        yield OperationPairAdd(address, (k, b[k]))
+        yield OperationAdd(address + [AddressLine(k)], b[k])
 
     for k in a_and_b:
-        yield from diff(a[k], b[k], address + [AddressLineKey(k)])
+        yield from diff(a[k], b[k], address + [AddressLine(k)])
     
 def diff(a, b, address=Address()):
     
@@ -143,10 +151,10 @@ def from_array(d):
     s, args = list(d.items())[0]
     
     functions = {
-            'pair_add': OperationPairAdd,
-            'pair_remove': OperationPairRemove,
+            'add': OperationAdd,
+            'remove': OperationRemove,
             'replace': OperationReplace,
-            'address_line_key': AddressLineKey,
+            'address_line': AddressLine,
             }
 
     f = functions[s]
