@@ -64,6 +64,8 @@ class OperationAdd(Operation):
 
 class OperationReplace(Operation):
     def __init__(self, a, b, address):
+        # TODO if you want to reorder the argument to put address first
+        # be aware that it will break existing elephant databases!
         super(OperationReplace, self).__init__(address)
         self.a = copy.deepcopy(a)
         self.b = copy.deepcopy(b)
@@ -76,6 +78,8 @@ class OperationReplace(Operation):
         return f'<{self.__class__.__name__} a={self.a!r} b={self.b!r} address={self.address}>'
 
     def to_array(self):
+        # TODO if you want to reorder the argument to put address first
+        # be aware that it will break existing elephant databases!
         return {'replace': [self.a, self.b, self.address.to_array()]}
 
 class AddressLine:
