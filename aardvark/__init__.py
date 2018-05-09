@@ -2,14 +2,21 @@ __version__ = '0.1'
 
 import copy
 
+def breakpoint():
+    import pdb; pdb.set_trace();
+
 def navigate(a, address):
-    for line in address:
+
+    if not isinstance(address, Address):
+        breakpoint()
+
+    for line in address.lines:
         a = line.navigate(a)
     return a
 
 class Operation:
     def __init__(self, address):
-        self.address = copy.deepcopy(address)
+        self.address = Address(address)
 
     def apply(self, a):
         a = navigate(a, self.address)
@@ -23,30 +30,76 @@ class OperationPair(Operation):
         super(OperationPair, self).__init__(address)
         self.pair = copy.deepcopy(pair)
 
-    def __repr__(self):
-        return f'<{self.__class__.__name__} address={self.address} pair={self.pair}>'
-
-class OperationPairRemove(OperationPair): pass
-
-class OperationPairAdd(OperationPair):
-
     def apply2(self, a):
-        a[self.pair[0]] = self.pair[1]
+        raise NotImplementedError()
+
+class OperationRemove(Operation):
+    def __init__(self, address):
+        super(OperationRemove, self).__init__(address)
+
+    def apply(self, a):
+        a = navigate(a, Address(self.address.lines[:-1]))
+        del a[self.address.lines[-1].key]
+
+    def to_array(self):
+        return {'remove': [self.address.to_array()]}
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__} address={self.address}>'
+
+class OperationAdd(Operation):
+    def __init__(self, address, value):
+        super(OperationAdd, self).__init__(address)
+        self.value = value
+
+    def apply(self, a):
+        a = navigate(a, Address(self.address.lines[:-1]))
+        a[self.address.lines[-1].key] = self.value
+
+    def to_array(self):
+        return {'add': [self.address.to_array(), self.value]}
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__} address={self.address} value={self.value!r}>'
 
 class OperationReplace(Operation):
     def __init__(self, a, b, address):
+        # TODO if you want to reorder the argument to put address first
+        # be aware that it will break existing elephant databases!
         super(OperationReplace, self).__init__(address)
         self.a = copy.deepcopy(a)
         self.b = copy.deepcopy(b)
+
+    def apply(self, a):
+        a = navigate(a, Address(self.address.lines[:-1]))
+        a[self.address.lines[-1].key] = self.b
+
     def __repr__(self):
-        return f'<{self.__class__.__name__} a={self.a} b={self.b} address={self.address}>'
+        return f'<{self.__class__.__name__} a={self.a!r} b={self.b!r} address={self.address}>'
+
+    def to_array(self):
+        # TODO if you want to reorder the argument to put address first
+        # be aware that it will break existing elephant databases!
+        return {'replace': [self.a, self.b, self.address.to_array()]}
 
 class Address:
-    def __init__(self, lines=[]):
-        self.lines = lines
+    def __init__(self, list_or_address=[]):
+        if isinstance(list_or_address, list):
+            lines = list_or_address
+        elif isinstance(list_or_address, Address):
+            lines = list_or_address.lines
+        else:
+            raise TypeError('must be list or Address')
+
+        lines = copy.deepcopy(lines)
+
+        self.lines = [maybe_dict_func(l) for l in lines]
 
     def __add__(self, lines):
         return Address(self.lines + lines)
+
+    def to_array(self):
+        return [l.to_array() for l in self.lines]
 
     def __repr__(self):
         return f'<{self.__class__.__name__} lines={self.lines!r}'
@@ -54,9 +107,7 @@ class Address:
     def string(self):
         return ''.join(line.string() for line in self.lines)
 
-class AddressLine: pass
-
-class AddressLineKey:
+class AddressLine:
     def __init__(self, key):
         self.key = key
 
@@ -69,18 +120,8 @@ class AddressLineKey:
     def string(self):
         return f'[{self.key!r}]'
 
-class AddressLineIndex:
-    def __init__(self, index):
-        self.index = index
-
-    def navigate(self, a):
-        return a[self.index]
-
-    def __repr__(self):
-        return f'<{self.__class__.__name__} index={self.index}>'
-
-    def string(self):
-        return f'[{self.index!r}]'
+    def to_array(self):
+        return {"address_line": [self.key]}
 
 def diff_dicts(a, b, address):
     
@@ -91,15 +132,14 @@ def diff_dicts(a, b, address):
     a_and_b = keys_a & keys_b
 
     for k in just_a:
-        yield OperationPairRemove(address, (k, a[k]))
+        yield OperationRemove(address + [AddressLine(k)])
 
     for k in just_b:
-        yield OperationPairAdd(address, (k, b[k]))
+        yield OperationAdd(address + [AddressLine(k)], b[k])
 
     for k in a_and_b:
-        yield from diff(a[k], b[k], address + [AddressLineKey(k)])
+        yield from diff(a[k], b[k], address + [AddressLine(k)])
     
-
 def diff(a, b, address=Address()):
     
     if a == b: return
@@ -115,6 +155,26 @@ def apply(a, diff_list):
     for d in diff_list:
         d.apply(a)
     return a
+
+def from_array(d):
+    s, args = list(d.items())[0]
+    
+    functions = {
+            'add': OperationAdd,
+            'remove': OperationRemove,
+            'replace': OperationReplace,
+            'address_line': AddressLine,
+            }
+
+    f = functions[s]
+
+    return f(*args)
+
+def maybe_dict_func(a):
+    if isinstance(a, dict):
+        return from_array(a)
+    else:
+        return a
 
 
 
