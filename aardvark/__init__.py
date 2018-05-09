@@ -41,6 +41,19 @@ class OperationReplace(Operation):
     def __repr__(self):
         return f'<{self.__class__.__name__} a={self.a} b={self.b} address={self.address}>'
 
+class Address:
+    def __init__(self, lines=[]):
+        self.lines = lines
+
+    def __add__(self, lines):
+        return Address(self.lines + lines)
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__} lines={self.lines!r}'
+
+    def string(self):
+        return ''.join(line.string() for line in self.lines)
+
 class AddressLine: pass
 
 class AddressLineKey:
@@ -53,12 +66,21 @@ class AddressLineKey:
     def __repr__(self):
         return f'<{self.__class__.__name__} key={self.key}>'
 
+    def string(self):
+        return f'[{self.key!r}]'
+
 class AddressLineIndex:
     def __init__(self, index):
         self.index = index
 
     def navigate(self, a):
         return a[self.index]
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__} index={self.index}>'
+
+    def string(self):
+        return f'[{self.index!r}]'
 
 def diff_dicts(a, b, address):
     
@@ -78,7 +100,7 @@ def diff_dicts(a, b, address):
         yield from diff(a[k], b[k], address + [AddressLineKey(k)])
     
 
-def diff(a, b, address=[]):
+def diff(a, b, address=Address()):
     
     if a == b: return
     
