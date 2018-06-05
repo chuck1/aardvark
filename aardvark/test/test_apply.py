@@ -1,14 +1,15 @@
-from pprint import pprint
-from aardvark import *
+import pprint
+import aardvark
 
 def test0():
     a = {}
     diff_list = [
-            OperationAdd([AddressLine('a')], 1),
+            aardvark.OperationAdd([aardvark.AddressLine('a')], 1),
             ]
-    b = apply(a, diff_list)
+    b = aardvark.apply(a, diff_list)
 
-    pprint(b)
+    print('b:')
+    pprint.pprint(b)
 
     assert b == {'a': 1}
 

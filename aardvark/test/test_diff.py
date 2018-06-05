@@ -5,6 +5,10 @@ import pytest
 def _test(a, b):
     diffs = list(aardvark.diff(a, b))
 
+    print('diffs:')
+    for d in diffs:
+        print(repr(d))
+
     c = aardvark.apply(a, diffs)
 
     assert b == c
@@ -20,6 +24,11 @@ def _test(a, b):
     assert b == d
 
 @pytest.mark.parametrize("a, b", [
+    ({'a': 1}, None),
+    ('a', None),
+    ('a', 1),
+    (None, 'a'),
+    (None, 1),
     ({'a': 1}, {'b': 1}),
     ({'c': {'a': 1}}, {'c': {'b': 1}}),
     ({'c': 1}, {'c': 2}),

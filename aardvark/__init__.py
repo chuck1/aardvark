@@ -19,10 +19,6 @@ class Operation:
         self.address = Address(address)
 
     def apply(self, a):
-        a = navigate(a, self.address)
-        self.apply2(a)
-    
-    def apply2(self, a):
         raise NotImplementedError()
 
 class OperationPair(Operation):
@@ -30,16 +26,15 @@ class OperationPair(Operation):
         super(OperationPair, self).__init__(address)
         self.pair = copy.deepcopy(pair)
 
-    def apply2(self, a):
-        raise NotImplementedError()
-
 class OperationRemove(Operation):
     def __init__(self, address):
         super(OperationRemove, self).__init__(address)
 
-    def apply(self, a):
-        a = navigate(a, Address(self.address.lines[:-1]))
-        del a[self.address.lines[-1].key]
+    def apply(self, a0):
+        a1 = copy.deepcopy(a0)
+        a2 = navigate(a1, Address(self.address.lines[:-1]))
+        del a2[self.address.lines[-1].key]
+        return a1
 
     def to_array(self):
         return {'remove': [self.address.to_array()]}
@@ -52,9 +47,11 @@ class OperationAdd(Operation):
         super(OperationAdd, self).__init__(address)
         self.value = value
 
-    def apply(self, a):
-        a = navigate(a, Address(self.address.lines[:-1]))
-        a[self.address.lines[-1].key] = self.value
+    def apply(self, a0):
+        a1 = copy.deepcopy(a0)
+        a2 = navigate(a1, Address(self.address.lines[:-1]))
+        a2[self.address.lines[-1].key] = self.value
+        return a1
 
     def to_array(self):
         return {'add': [self.address.to_array(), self.value]}
@@ -71,8 +68,13 @@ class OperationReplace(Operation):
         self.b = copy.deepcopy(b)
 
     def apply(self, a):
+        if not self.address.lines:
+            return copy.deepcopy(self.b)
+
+        a = copy.deepcopy(a)
         a = navigate(a, Address(self.address.lines[:-1]))
         a[self.address.lines[-1].key] = self.b
+        return a
 
     def __repr__(self):
         return f'<{self.__class__.__name__} a={self.a!r} b={self.b!r} address={self.address}>'
@@ -112,6 +114,12 @@ class AddressLine:
         self.key = key
 
     def navigate(self, a):
+        try: 
+            a[self.key]
+        except:
+            #breakpoint()
+            pass
+
         return a[self.key]
 
     def __repr__(self):
@@ -153,7 +161,7 @@ def diff(a, b, address=Address()):
 def apply(a, diff_list):
     a = copy.deepcopy(a)
     for d in diff_list:
-        d.apply(a)
+        a = d.apply(a)
     return a
 
 def from_array(d):
