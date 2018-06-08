@@ -1,6 +1,8 @@
 __version__ = '0.1'
 
 import copy
+import difflib
+import json
 
 def breakpoint():
     import pdb; pdb.set_trace();
@@ -71,10 +73,10 @@ class OperationReplace(Operation):
         if not self.address.lines:
             return copy.deepcopy(self.b)
 
-        a = copy.deepcopy(a)
-        a = navigate(a, Address(self.address.lines[:-1]))
-        a[self.address.lines[-1].key] = self.b
-        return a
+        a1 = copy.deepcopy(a)
+        a2 = navigate(a1, Address(self.address.lines[:-1]))
+        a2[self.address.lines[-1].key] = self.b
+        return a1
 
     def __repr__(self):
         return f'<{self.__class__.__name__} a={self.a!r} b={self.b!r} address={self.address}>'
@@ -83,6 +85,29 @@ class OperationReplace(Operation):
         # TODO if you want to reorder the argument to put address first
         # be aware that it will break existing elephant databases!
         return {'replace': [self.a, self.b, self.address.to_array()]}
+
+class OperationDiffLib(Operation):
+    def __init__(self, address, diffs):
+        super(OperationDiffLib, self).__init__(address)
+        self.diffs = diffs
+
+    def apply(self, a):
+        if not self.address.lines:
+            return ''.join(difflib.restore(self.diffs, 2))
+
+        a1 = copy.deepcopy(a)
+        a2 = navigate(a1, Address(self.address.lines[:-1]))
+        
+        # do stuff to a2
+        a2[self.address.lines[-1].key] = ''.join(difflib.restore(self.diffs, 2))
+
+        return a1
+
+    def to_array(self):
+        return {'difflib': {
+                'address': self.address.to_array(),
+                'diffs': self.diffs,
+                }}
 
 class Address:
     def __init__(self, list_or_address=[]):
@@ -156,7 +181,29 @@ def diff(a, b, address=Address()):
         yield from diff_dicts(a, b, address)
         return
 
-    yield OperationReplace(a, b, address)
+    if isinstance(a, str) and isinstance(b, str):
+        a_lines = a.splitlines(keepends=True)
+        b_lines = b.splitlines(keepends=True)
+        if (len(a_lines) > 1) or (len(a_lines) > 2):
+            d = difflib.ndiff(a_lines, b_lines)
+            d = list(d)
+            import pprint
+            pprint.pprint(d)
+
+            o = OperationDiffLib(address, d)
+
+            print(f'operation difflib: {json.dumps(o.to_array())}')
+            print(f'operation difflib bytes: {len(json.dumps(o.to_array()))}')
+             
+            yield o
+            return
+
+    o = OperationReplace(a, b, address)
+
+    print(f'operation replace: {json.dumps(o.to_array())}')
+    print(f'operation replace bytes: {len(json.dumps(o.to_array()))}')
+
+    yield o
 
 def apply(a, diff_list):
     a = copy.deepcopy(a)
@@ -165,6 +212,9 @@ def apply(a, diff_list):
     return a
 
 def from_array(d):
+
+    print('from_array', d, list(d.items())[0])
+
     s, args = list(d.items())[0]
     
     functions = {
@@ -172,11 +222,15 @@ def from_array(d):
             'remove': OperationRemove,
             'replace': OperationReplace,
             'address_line': AddressLine,
+            'difflib': lambda d: OperationDiffLib(d['address'], d['diffs']),
             }
 
     f = functions[s]
 
-    return f(*args)
+    if isinstance(args, list):
+        return f(*args)
+    else:
+        return f(args)
 
 def maybe_dict_func(a):
     if isinstance(a, dict):
