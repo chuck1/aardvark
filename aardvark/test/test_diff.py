@@ -23,12 +23,15 @@ def _test(a, b):
     
     assert b == d
 
+string_short0 = 'a\nb\nc\nd\ne'
+string_short1 = 'a\nb\nz\nd\ne'
+
 long_string0 = (
         'hello\n'
         'this is a long multiline\n'
         'string. it has newline characters.\n'
         'it has several lines\n'
-        'goodbyte\n'
+        'goodbye\n'
         )
 long_string1 = (
         'hello\n'
@@ -36,9 +39,8 @@ long_string1 = (
         'string. it has newline characters.\n'
         'THIS IS A NEW LINE\n'
         'it has several lines\n'
-        'goodbyte\n'
+        'goodbye\n'
         )
-
 
 @pytest.mark.parametrize("a, b", [
     ({'a': 1}, None),
@@ -46,12 +48,14 @@ long_string1 = (
     ('a', 1),
     (None, 'a'),
     (None, 1),
-    ({'a': 1},        {'b': 1}),
-    ({'c': {'a': 1}}, {'c': {'b': 1}}),
-    ({'c': {'a': 1}}, {'c': {'a': 2}}),
-    ({'c': 1},        {'c': 2}),
-    ('a\nb\nc\nd\ne', 'a\nb\nz\nd\ne'),
-    (long_string0,    long_string1),
+    ({'a': 1},           {'b': 1}),
+    ({'c': {'a': 1}},    {'c': {'b': 1}}),
+    ({'c': {'a': 1}},    {'c': {'a': 2}}),
+    ({'c': 1},           {'c': 2}),
+    (long_string0,       long_string1),
+    (string_short0,      string_short1),
+    ({'a': long_string0},   {'a': long_string1}),
+    ({'a': string_short0},  {'a': string_short1}),
     ])
 def test_diff(a, b):
     _test(a, b)
