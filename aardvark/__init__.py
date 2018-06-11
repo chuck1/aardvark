@@ -192,16 +192,16 @@ def diff(a, b, address=Address()):
 
             o = OperationDiffLib(address, d)
 
-            print(f'operation difflib: {json.dumps(o.to_array())}')
-            print(f'operation difflib bytes: {len(json.dumps(o.to_array()))}')
+            #print(f'operation difflib: {json.dumps(o.to_array())}')
+            #print(f'operation difflib bytes: {len(json.dumps(o.to_array()))}')
              
             yield o
             return
 
     o = OperationReplace(a, b, address)
 
-    print(f'operation replace: {json.dumps(o.to_array())}')
-    print(f'operation replace bytes: {len(json.dumps(o.to_array()))}')
+    #print(f'operation replace: {json.dumps(o.to_array())}')
+    #print(f'operation replace bytes: {len(json.dumps(o.to_array()))}')
 
     yield o
 
