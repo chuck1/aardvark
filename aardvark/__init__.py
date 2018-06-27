@@ -109,6 +109,9 @@ class OperationDiffLib(Operation):
                 'diffs': self.diffs,
                 }}
 
+    def __repr__(self):
+        return f'<{self.__class__.__name__} address={self.address!r} diffs={self.diffs!r}>'
+
 class Address:
     def __init__(self, list_or_address=[]):
         if isinstance(list_or_address, list):
@@ -187,8 +190,6 @@ def diff(a, b, address=Address()):
         if (len(a_lines) > 1) or (len(a_lines) > 2):
             d = difflib.ndiff(a_lines, b_lines)
             d = list(d)
-            import pprint
-            pprint.pprint(d)
 
             o = OperationDiffLib(address, d)
 
@@ -213,7 +214,7 @@ def apply(a, diff_list):
 
 def from_array(d):
 
-    print('from_array', d, list(d.items())[0])
+    #print('from_array', d, list(d.items())[0])
 
     s, args = list(d.items())[0]
     
@@ -238,6 +239,25 @@ def maybe_dict_func(a):
     else:
         return a
 
+
+def blame(history, address, line):
+    assert isinstance(history, list)
+
+    for h in reversed(history):
+
+        assert isinstance(h, list)
+
+        for d in h:
+            assert isinstance(d, Operation)
+    
+            if d.address.lines != address: continue
+
+            if not isinstance(d, OperationDiffLib): continue
+
+            s = '+ ' + line
+
+            if s in d.diffs:
+                return d
 
 
 
