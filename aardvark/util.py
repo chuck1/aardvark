@@ -1,14 +1,23 @@
 import aardvark
 
+def _clean(d0):
+    assert isinstance(d0, dict)
+    
+    # yield key value pairs that have been cleaned
+
+    for k, v in d0.items():
+        if k.startswith("_"): continue
+
+        if isinstance(v, dict):
+            yield k, clean(v)
+        else:
+            yield k, v
+
 def clean(d0):
-    d1 = dict(d0)
+    assert isinstance(d0, dict)
 
-    keys_to_delete = [k for k in d1.keys() if k.startswith("_")]
+    return dict((k, v) for k, v in _clean(d0))
 
-    for k in keys_to_delete:
-        del d1[k]
-
-    return d1
  
 def diffs_keys_set(diffs):
     for d in diffs:
