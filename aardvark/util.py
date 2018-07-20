@@ -7,14 +7,15 @@ def _clean(d0):
 
     for k, v in d0.items():
         if k.startswith("_"): continue
+        yield k, clean(v)
 
-        if isinstance(v, dict):
-            yield k, clean(v)
-        else:
-            yield k, v
+def clean_list(l):
+    return [clean(_) for _ in l]
 
 def clean(d0):
-    assert isinstance(d0, dict)
+    if isinstance(d0, list): return clean_list(d0)
+
+    if not isinstance(d0, dict): return d0
 
     return dict((k, v) for k, v in _clean(d0))
 
