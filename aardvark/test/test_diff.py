@@ -17,7 +17,7 @@ def _test(a, b):
 
     json.dumps(diffs1)
 
-    diffs2 = [aardvark.from_array(d) for d in diffs1]
+    diffs2 = [aardvark.from_array(d, aardvark.FUNCTIONS) for d in diffs1]
 
     d = aardvark.apply(a, diffs2)
     

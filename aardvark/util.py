@@ -51,3 +51,23 @@ def diffs_to_update(diffs, item):
 
     return update
 
+def from_array(d, functions):
+
+    #print('from_array', d, list(d.items())[0])
+
+    s, args = list(d.items())[0]
+
+    f = functions[s]
+
+    if isinstance(args, list):
+        return f(*args)
+    else:
+        return f(args)
+
+def maybe_dict_func(a, functions):
+    if isinstance(a, dict):
+        return from_array(a, functions)
+    else:
+        return a
+
+
