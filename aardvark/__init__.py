@@ -76,7 +76,6 @@ FUNCTIONS = {
             'difflib': lambda d: OperationDiffLib(d['address'], d['diffs']),
             }
 
-
 def blame(history, address, line):
     assert isinstance(history, list)
 
@@ -95,6 +94,11 @@ def blame(history, address, line):
 
             if s in d.diffs:
                 return d
+
+def parse_diffs(D):
+    return [aardvark.util.from_array(d, FUNCTIONS) for d in D]
+
+
 
 
 

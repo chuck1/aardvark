@@ -30,8 +30,9 @@ class OperationPair(Operation):
         self.pair = copy.deepcopy(pair)
 
 class OperationRemove(Operation):
-    def __init__(self, address):
+    def __init__(self, address): #, value):
         super(OperationRemove, self).__init__(address)
+        #self.value = value
 
     def apply(self, a0):
         a1 = copy.deepcopy(a0)
@@ -39,7 +40,14 @@ class OperationRemove(Operation):
         del a2[self.address.lines[-1].key]
         return a1
 
+    def unapply(self, a0):
+        a1 = copy.deepcopy(a0)
+        a2 = navigate(a1, Address(self.address.lines[:-1]))
+        a2[self.address.lines[-1].key] = self.value
+        return a1
+
     def to_array(self):
+        #return {'remove': [self.address.to_array(), value]}
         return {'remove': [self.address.to_array()]}
 
     def __repr__(self):
@@ -79,6 +87,15 @@ class OperationReplace(Operation):
         a2[self.address.lines[-1].key] = self.b
         return a1
 
+    def unapply(self, a):
+        if not self.address.lines:
+            return copy.deepcopy(self.a)
+
+        a1 = copy.deepcopy(a)
+        a2 = navigate(a1, Address(self.address.lines[:-1]))
+        a2[self.address.lines[-1].key] = self.a
+        return a1
+
     def __repr__(self):
         return f'<{self.__class__.__name__} a={self.a!r} b={self.b!r} address={self.address}>'
 
@@ -104,6 +121,17 @@ class OperationDiffLib(Operation):
 
         return a1
 
+    def unapply(self, a):
+        if not self.address.lines:
+            return ''.join(difflib.restore(self.diffs, 1))
+
+        a1 = copy.deepcopy(a)
+        a2 = navigate(a1, Address(self.address.lines[:-1]))
+
+        a2[self.address.lines[-1].key] = ''.join(difflib.restore(self.diffs, 1))
+
+        return a1
+
     def to_array(self):
         return {'difflib': {
                 'address': self.address.to_array(),
@@ -112,5 +140,14 @@ class OperationDiffLib(Operation):
 
     def __repr__(self):
         return f'<{self.__class__.__name__} address={self.address!r} diffs={self.diffs!r}>'
+
+
+
+
+
+
+
+
+
 
 

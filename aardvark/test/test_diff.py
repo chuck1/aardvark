@@ -2,6 +2,15 @@ import json
 import aardvark
 import pytest
 
+def _test_serialize(diffs):
+    diffs1 = [d.to_array() for d in diffs]
+
+    json.dumps(diffs1)
+
+    diffs2 = [aardvark.from_array(d, aardvark.FUNCTIONS) for d in diffs1]
+
+    return diffs2
+
 def _test(a, b):
     diffs = list(aardvark.diff(a, b))
 
@@ -13,11 +22,10 @@ def _test(a, b):
 
     assert b == c
 
-    diffs1 = [d.to_array() for d in diffs]
+    #a1 = aardvark.unapply(b, diffs)
+    #assert a1 == a
 
-    json.dumps(diffs1)
-
-    diffs2 = [aardvark.from_array(d, aardvark.FUNCTIONS) for d in diffs1]
+    diffs2 = _test_serialize(diffs)
 
     d = aardvark.apply(a, diffs2)
     
