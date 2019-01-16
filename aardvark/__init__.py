@@ -57,6 +57,13 @@ def diff(a, b, address=Address()):
     yield o
 
 def apply(a, diff_list):
+    """
+    Args:
+      a: the object to modify
+      diff_list: a list of Operation objects to apply to `a`
+    Returns:
+      a new object
+    """
     a = copy.deepcopy(a)
     for d in diff_list:
         a = d.apply(a)
